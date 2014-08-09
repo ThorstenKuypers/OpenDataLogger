@@ -1,0 +1,39 @@
+SessionTimeRemain,Seconds left till session ends,s,double --> float sessionTimeLeft;
+Throttle,0=off throttle to 1=full throttle,%,float --> float gas;
+Brake,0=brake released to 1=max pedal force,%,float --> float brake;
+FuelLevel,Liters of fuel remaining,l,float --> float fuel;
+Gear,-1=reverse  0=neutral  1..n=current gear,,int --> int gear ;
+RPM,Engine rpm,revs/min,float --> int rpms ;
+SteeringWheelAngle,Steering wheel angle,rad,float --> float steerAngle;
+Speed,GPS vehicle speed,m/s,float --> float speedKmh;
+VelocityX,X velocity,m/s,float -->
+VelocityY,Y velocity,m/s,float -->
+VelocityZ,Z velocity,m/s,float --> float velocity[3]; (CHECK which index is X/Y/Z !!!)
+RRpressure,RR tire pressure,kPa,float -->
+LRpressure,LR tire pressure,kPa,float -->
+RFpressure,RF tire pressure,kPa,float -->
+LFpressure,LF tire pressure,kPa,float --> float wheelsPressure[4]; (CHECK which index is what !!!)
+RRwearM,RR tire middle percent tread remaining,%,float -->
+LRwearM,LR tire middle percent tread remaining,%,float -->
+RFwearM,RF tire middle percent tread remaining,%,float -->
+LFwearM,LF tire middle percent tread remaining,%,float --> float tyreWear[4];
+Yaw,Yaw orientation,rad,float --> float heading; (correct ???)
+Pitch,Pitch orientation,rad,float --> float pitch;
+Roll,Roll orientation,rad,float --> float roll;
+LongAccel,Longitudinal acceleration (including gravity),m/s^2,float -->
+LatAccel,Lateral acceleration (including gravity),m/s^2,float -->
+VertAccel,Vertical acceleration (including gravity),m/s^2,float --> float accG[3];
+RRtempM,RR tire middle surface temperature,C,float -->
+LRtempM,LR tire middle surface temperature,C,float -->
+RFtempM,RF tire middle surface temperature,C,float -->
+LFtempM,LF tire middle surface temperature,C,float --> float tyreCoreTemperature[4];
+dcTractionControl,In car traction control adjustment,,float --> float tc;
+OnPitRoad,Is the player car on pit road between the cones,bool -->
+IsOnTrack,1=Car on track physics running,bool --> int isInPit; (use both, but inverted ???)
+Lap,Lap count,,int --> int completedLaps;
+RRshockDefl,RR shock deflection,m,float -->
+LRshockDefl,LR shock deflection,m,float -->
+RFshockDefl,RF shock deflection,m,float --> 
+LFshockDefl,LF shock deflection,m,float --> float suspensionTravel[4];
+LapDist,Meters traveled from S/F this lap,m,float --> float distanceTraveled;
+
