@@ -6,6 +6,7 @@
 
 #include <Windows.h>
 
+using namespace std;
 
 namespace OpenDataLogger
 {
@@ -13,15 +14,15 @@ namespace OpenDataLogger
 	{
 	public:
 		DebugLog();
-		DebugLog(std::wstring& path);
+		DebugLog(std::string& path);
 		~DebugLog();
 
 		void Log(std::string& msg, const char* file, const int line, const char* cls, const char* method);
 
-		DebugLog& operator= (DebugLog&){ return DebugLog(); }
+		//DebugLog& operator= (DebugLog&){ return new DebugLog(); }
 
 	private:
 
-		std::ofstream _file;
+		ofstream _file;
 	};
 }

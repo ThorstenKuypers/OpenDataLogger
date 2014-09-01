@@ -1,6 +1,7 @@
 #pragma once
 
 #include <OpenDataLogger.h>
+#include <BasePlugin.h>
 
 #include "InternalsPlugin.hpp"
 
@@ -14,15 +15,24 @@ namespace rf_plugin
 {
 	using namespace OpenDataLogger;
 
-	class rfPlugin : public InternalsPluginV3
+	class rfPlugin : public InternalsPluginV3, CBasePlugin
 	{
 	public:	
 
 		rfPlugin();
-		~rfPlugin() {}
+		~rfPlugin();
 
 		PluginObjectInfo* GetInfo();
-		void Destroy() { Shutdown(); }
+		void Destroy()
+		{
+#ifdef _DEBUG
+			if (_dbg != nullptr)
+				_dbg->Log(string("PluginObjectInfo destroyed"), __FILE__, __LINE__, "", __FUNCTION__);
+#endif
+			Shutdown();
+
+		}
+
 		PluginObjectProperty* GetProperty(const char* szName){ return 0; }
 		PluginObjectProperty* GetProperty(const unsigned idx){ return 0; }
 		unsigned GetPropertyCount() const { return 0; }
@@ -44,7 +54,11 @@ namespace rf_plugin
 
 	private:
 
+		virtual void YamlUpdate(void*);
+
 		COpenDataLogger* _odl;	// openDataLogger instance
+
+		DWORD _sessionID;
 
 		double _sessionTime;
 		float _maxEngineRpm;
@@ -61,6 +75,9 @@ namespace rf_plugin
 
 		ScoringInfoV2 _scoringInfo;	// latest scoring info (partial info; without vehicle array update)
 		VehicleScoringInfoV2 _playerVehicleInfo; // VehicleScoringInfo of player
+
+		bool _dataLoggerEnabled;
+		string _currentDir;	// current directory; usually the main directory of the sim
 
 #ifdef _DEBUG
 		DebugLog* _dbg;

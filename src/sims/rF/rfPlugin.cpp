@@ -10,7 +10,8 @@ rfPluginInfo g_pluginInfo;
 extern "C" __declspec(dllexport) const char* GetPluginName() { return PLUGIN_NAME; }
 extern "C" __declspec(dllexport) const unsigned GetPluginVersion() { return PLUGIN_VERSION; }
 extern "C" __declspec(dllexport) const unsigned GetPluginObjectCount() { return 1; }
-extern "C" __declspec(dllexport) PluginObjectInfo* GetPluginObjectInfo(const unsigned idx) {
+extern "C" __declspec(dllexport) PluginObjectInfo* GetPluginObjectInfo(const unsigned idx)
+{
 
 	switch (idx) {
 
@@ -32,11 +33,26 @@ rfPlugin::rfPlugin()
 	_odl = NULL;
 
 #ifdef _DEBUG
-	wchar_t dir[1024];
-	GetCurrentDirectoryW(1024, dir);
+	_dbg = NULL;
+	char dir[1024];
+	GetCurrentDirectoryA(1024, dir);
 
-	_dbg = new DebugLog(std::wstring(dir));
+	_dbg = new DebugLog(std::string(dir));
+	if (_dbg != NULL)
+		_dbg->Log(string("Constructor"), __FILE__, __LINE__, "", __FUNCTION__);
+#endif
+}
 
+rfPlugin::~rfPlugin()
+{
+#ifdef _DEBUG
+	if (_dbg != NULL) {
+
+		_dbg->Log(string("Destructor"), __FILE__, __LINE__, "", __FUNCTION__);
+
+		delete _dbg;
+		_dbg = NULL;
+	}
 #endif
 }
 
@@ -50,7 +66,7 @@ void rfPlugin::Startup()
 
 #ifdef _DEBUG
 	char msg[512];
-	sprintf_s(msg, 512, "ODL ref: _odl=%08X", _odl);
+	sprintf_s(msg, 512, "DataLogger started! <ODL ref: _odl=%08X>", _odl);
 	_dbg->Log(string(msg), __FILE__, __LINE__, "", __FUNCTION__);
 #endif
 }
@@ -60,19 +76,17 @@ void rfPlugin::Startup()
 /// - called when plugin is unloaded (at sim shutdown)
 void rfPlugin::Shutdown()
 {
-#ifdef _DEBUG
-	char msg[512];
-	sprintf_s(msg, 512, "ODL ref: _odl=%08X", _odl);
-	_dbg->Log(string(msg), __FILE__, __LINE__, "", __FUNCTION__);
-#endif
-	if (_odl) {
+	if (_odl != NULL) {
 		delete _odl;
 		_odl = NULL;
 	}
 
 #ifdef _DEBUG
-	if (_dbg != NULL)
-		delete _dbg;
+	if (_dbg != NULL) {
+		char msg[512];
+		sprintf_s(msg, 512, "DataLogger shut down! <ODL ref: _odl=%08X>", _odl);
+		_dbg->Log(string(msg), __FILE__, __LINE__, "", __FUNCTION__);
+	}
 #endif
 }
 
@@ -92,6 +106,9 @@ void rfPlugin::StartSession()
 	_newSession = true;
 	_playerVehicleIdx = -1;
 	_startFuel = -1;
+
+	srand((UINT)time(NULL));
+	_sessionID = (DWORD)rand();
 
 	_odl->StartSession();
 }
@@ -154,10 +171,18 @@ void rfPlugin::UpdateTelemetry(const TelemInfoV2& info)
 		_newSession = false;
 
 	}
-	
+
 	if (_sampleRate == -1) {
 
-		_sampleRate = (int)floor(((float)1.0f / (float)info.mDeltaTime) + (float)0.5f);
+		_sampleRate = (int)round(((float)1.0f / (float)info.mDeltaTime)/* + (float)0.5f*/);
+
+#ifdef _DEBUG
+		if (_dbg != NULL) {
+			char msg[512];
+			sprintf_s(msg, 512, "Sample rate @: %i", _sampleRate);
+			_dbg->Log(string(msg), __FILE__, __LINE__, "", __FUNCTION__);
+		}
+#endif
 		_odl->SetSampleRate(_sampleRate);
 	}
 
@@ -249,7 +274,7 @@ void rfPlugin::UpdateTelemetry(const TelemInfoV2& info)
 		cd.wheels[0].wearL = info.mWheel[0].mWear;
 		cd.wheels[0].wearM = info.mWheel[0].mWear;
 		cd.wheels[0].wearR = info.mWheel[0].mWear;
-		
+
 		cd.wheels[1].brakeLinePress = -1;
 		cd.wheels[1].pressure = info.mWheel[1].mPressure;
 		cd.wheels[1].rideHeight = info.mWheel[1].mRideHeight;
@@ -282,9 +307,9 @@ void rfPlugin::UpdateTelemetry(const TelemInfoV2& info)
 		cd.wheels[3].wearL = info.mWheel[3].mWear;
 		cd.wheels[3].wearM = info.mWheel[3].mWear;
 		cd.wheels[3].wearR = info.mWheel[3].mWear;
-		
-		
-		_maxEngineRpm = info.mEngineMaxRPM;
+
+		if (_maxEngineRpm == -1)
+			_maxEngineRpm = info.mEngineMaxRPM;
 
 		_odl->UpdateSessionInfo(sd);
 		_odl->UpdateTelemetryInfo(cd);
@@ -309,7 +334,7 @@ void rfPlugin::UpdateScoring(const ScoringInfoV2& info)
 		_trackLength = info.mLapDist;
 		_odl->SetTrackLength(_trackLength);
 	}
-	
+
 	if (_playerVehicleIdx == -1) {
 
 		// find index of players vehicle in vehicle info array
@@ -330,20 +355,177 @@ void rfPlugin::UpdateScoring(const ScoringInfoV2& info)
 	if (_playerVehicleIdx != -1) {
 
 		memcpy(&_playerVehicleInfo, &info.mVehicle[_playerVehicleIdx], sizeof(VehicleScoringInfoV2));
+
 	}
 
+	YamlUpdate((void*)&info);
+
 #ifdef _DEBUG
-	
-	double dt = _sessionTime - _sr;
-	_sr = 0;
 
 	stringstream ss;
 	ss << "-- _isInGarage: " << _isInGarage << endl;
-	ss << "-- scoring update delta: " << dt << endl;
+	//ss << "-- scoring update delta: " << dt << endl;
 	ss << "-- players car idx: " << _playerVehicleIdx << endl;
+	ss << "-- player max RPM: " << _maxEngineRpm << endl;
 
 	_dbg->Log(string(ss.str().c_str()), __FILE__, __LINE__, "", __FUNCTION__);
 
+	FILE* fp = NULL;
+	fopen_s(&fp, "ResultsStream.txt", "w");
+	if (fp != NULL) {
+		//fwrite(info.mResultsStream, 1, strlen(info.mResultsStream) + 1, fp);
+		fprintf(fp, "%s", info.mResultsStream);
+	}
+	fclose(fp);
 #endif
 
+}
+
+void rfPlugin::YamlUpdate(void* data)
+{
+	ScoringInfoV2* info = nullptr;
+	std::string sessionInfoStr = std::string();
+
+	if (data != nullptr)
+	{
+		info = reinterpret_cast<ScoringInfoV2*>(data);
+	}
+
+	memset(&_weekendInfo, 0, sizeof(_weekendInfo));
+	memset(&_sessionInfo, 0, sizeof(_sessionInfo));
+	memset(&_driverInfo, 0, sizeof(_driverInfo));
+
+	// WeekendInfo
+	strncpy_s(_weekendInfo.TrackName, IRSDK_MAX_STRING, info->mTrackName, IRSDK_MAX_STRING);
+	_weekendInfo.SessionID = _sessionID;
+	_weekendInfo.WeekendOptions.NumStarters = info->mNumVehicles;
+	_weekendInfo.TrackLength = (float)info->mLapDist / 1000;
+	//_weekendInfo.TrackID = djb2((unsigned char *)&info->mTrackName) & 0xFFFFFF;
+
+	if (info->mDarkCloud < 0.25)
+		strcpy_s(_weekendInfo.TrackSkies, IRSDK_MAX_STRING, "Clear");
+	else if (info->mDarkCloud < 0.5)
+		strcpy_s(_weekendInfo.TrackSkies, IRSDK_MAX_STRING, "Partly Cloudy");
+	else if (info->mDarkCloud < 0.5)
+		strcpy_s(_weekendInfo.TrackSkies, IRSDK_MAX_STRING, "Mostly Cloudy");
+	else
+		strcpy_s(_weekendInfo.TrackSkies, IRSDK_MAX_STRING, "Overcast");
+
+	// mRaining not used
+	_weekendInfo.TrackAirTemp = (float)info->mAmbientTemp;
+	_weekendInfo.TrackSurfaceTemp = (float)info->mTrackTemp;
+
+	// Wind isn't actually enabled, meh...
+	_weekendInfo.TrackWindVel = sqrtf((info->mWind.x * info->mWind.x) + (info->mWind.y * info->mWind.y));
+	// direction A·B = ||A|| ||B|| cos theta
+	if (_weekendInfo.TrackWindVel > 0.0)
+		_weekendInfo.TrackWindDir = acosf((info->mWind.x + info->mWind.y) / (sqrtf((info->mWind.x * info->mWind.x) + (info->mWind.y * info->mWind.y)) * sqrtf(1)));
+	else {
+		_weekendInfo.TrackWindDir = 0.0;
+	}
+
+	// mOnPathWetness not used
+	// mOffPathWetness not used
+
+	// _sessionInfo
+	_sessionInfo.Sessions[info->mSession].SessionNum = info->mSession;
+	//_sessionInfo.Sessions[info->mSession].SessionTime = (float)info->mEndET;
+	_sessionInfo.Sessions[info->mSession].SessionTime = (float)info->mCurrentET;
+
+#ifdef _DEBUG
+
+#endif
+
+	switch (info->mSession) // (0=testday 1-4=practice 5-8=qual 9=warmup 10-13=race)
+	{
+	case 0:
+	case 1:
+	case 2:
+	case 3:
+	case 4:
+		strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Practice");
+		break;
+	case 5:
+	case 6:
+	case 7:
+	case 8:
+		strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Qualify");
+		break;
+	case 9:
+		strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Warmup");
+		break;
+	case 10:
+	case 11:
+	case 12:
+	case 13:
+		strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Race");
+		break;
+	default:
+		break;
+	}
+
+	if (info->mMaxLaps >= 2147483647)
+		strcpy_s(_sessionInfo.Sessions[info->mSession].SessionLaps, IRSDK_MAX_STRING, "unlimited");
+	else
+		sprintf_s(_sessionInfo.Sessions[info->mSession].SessionLaps, IRSDK_MAX_STRING, "%i", info->mMaxLaps);
+
+	_sessionInfo.Sessions[info->mSession].ResultsFastestLap.FastestTime = 999999.9f;
+
+	// _driverInfo
+	for (long i = 0; i < info->mNumVehicles; ++i)
+	{
+		VehicleScoringInfoV2 &vinfo = info->mVehicle[i];
+		if ((float)vinfo.mBestLapTime < _sessionInfo.Sessions[info->mSession].ResultsFastestLap.FastestTime) {
+			_sessionInfo.Sessions[info->mSession].ResultsFastestLap.CarIdx = i;// vinfo.mPlace;
+			_sessionInfo.Sessions[info->mSession].ResultsFastestLap.FastestTime = (float)vinfo.mBestLapTime;
+			//_sessionInfoSessions[info->mSession].ResultsFastestLap.FastestLap = vinfo.mBestLapTime;
+		}
+
+		//_sessionInfo.Sessions[info.mSession].ResultsPositions[i].CarIdx = vinfo.mID;
+		_sessionInfo.Sessions[info->mSession].ResultsPositions[i].Position = vinfo.mPlace;
+		_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ClassPosition = vinfo.mPlace; // TODO
+		_sessionInfo.Sessions[info->mSession].ResultsPositions[i].FastestTime = (float)vinfo.mBestLapTime;
+		_sessionInfo.Sessions[info->mSession].ResultsPositions[i].Lap = vinfo.mTotalLaps;
+		_sessionInfo.Sessions[info->mSession].ResultsPositions[i].LastTime = (float)vinfo.mLastLapTime;
+		_sessionInfo.Sessions[info->mSession].ResultsPositions[i].LapsComplete = vinfo.mTotalLaps;
+		_sessionInfo.Sessions[info->mSession].ResultsPositions[i].LapsDriven = vinfo.mTotalLaps; //(float)((double)vinfo->mTotalLaps + (vinfo->mLapDist/info->mLapDist));
+		_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutId = (int)vinfo.mFinishStatus;
+
+		switch (vinfo.mFinishStatus) // 0=none, 1=finished, 2=dnf, 3=dq
+		{
+		case 0:
+			strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Running");
+			break;
+		case 1:
+			strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Finished");
+			break;
+		case 2:
+			strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "DNF");
+			break;
+		case 3:
+			strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Disqualified");
+			break;
+		default:
+			break;
+		}
+
+		//_driverInfo.Drivers[i].CarIdx = vinfo->mID;
+		//_driverInfo.Drivers[i].UserID = djb2((unsigned char *)&vinfo.mDriverName) & 0xFFFFFF;
+		//_driverInfo.Drivers[i].CarID = djb2((unsigned char *)&vinfo.mVehicleName) & 0xFFFFFF;
+		//_driverInfo.Drivers[i].CarClassID = djb2((unsigned char *)&vinfo.mVehicleClass) & 0xFFFFFF;
+		strcpy_s(_driverInfo.Drivers[i].UserName, IRSDK_MAX_STRING, vinfo.mDriverName);
+		strcpy_s(_driverInfo.Drivers[i].CarPath, IRSDK_MAX_STRING, vinfo.mVehicleName);
+		strcpy_s(_driverInfo.Drivers[i].CarClassShortName, IRSDK_MAX_STRING, vinfo.mVehicleClass);
+
+		//if (vinfo.mIsPlayer) {
+		//	_driverInfo.DriverCarIdx = i; // vinfo.mPlace;
+		//}
+		_driverInfo.DriverCarIdx = _playerVehicleIdx;
+		_driverInfo.DriverCarRedLine = _maxEngineRpm;
+
+	}
+
+	CYaml::GenerateSessionInfo(_weekendInfo, _sessionInfo, _driverInfo, &sessionInfoStr);
+
+	_odl->UpdateSessionInfoString(sessionInfoStr.c_str());
 }

@@ -7,11 +7,11 @@ DebugLog::DebugLog()
 {
 }
 
-DebugLog::DebugLog(std::wstring& path)
+DebugLog::DebugLog(std::string& path)
 {
-	std::wstringstream wss;
+	std::stringstream wss;
 	wss << path << "\\odldbg.log";
-	std::wstring dir = std::wstring(wss.str().c_str());
+	std::string dir = std::string(wss.str().c_str());
 
 	_file = std::ofstream(dir, std::ios_base::out);
 

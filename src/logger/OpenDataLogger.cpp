@@ -120,10 +120,12 @@ COpenDataLogger::COpenDataLogger(string& simName)
 	wstringstream wss;
 	wss << _rootPath << "\\" << ODL_LOGFILE_NAME;
 	wstring ws = wstring(wss.str().c_str());
-	_log = ofstream(ws, std::ios_base::out);
+	std::string lfp = std::string(ws.begin(), ws.end());
 
-	_irsdkSrv = irsdkServer::instance();
-	
+	_log = ofstream(lfp, std::ios_base::out);
+
+	//_irsdkSrv = irsdkServer::instance();
+
 	stringstream ss;
 	ss << "OpenDataLogger for " << simName << " started";
 	string str = string(ss.str().c_str());
@@ -184,23 +186,25 @@ void COpenDataLogger::UpdateData()
 {
 	// before going into the main data output loop, we must mark the headers as final
 	// it is possible for finalizeHeader() to fail, so try every tick, just in case
-	if (!_irsdkSrv->isHeaderFinalized())
-		_irsdkSrv->finalizeHeader();
+	if (!irsdkServer::instance()->isHeaderFinalized())
+		irsdkServer::instance()->finalizeHeader();
 
 	// reset the data for this pass, if something is not updated
 	// we will output zero for that tick ... and clear the garbage out of the vars if this is the first call
-	if (_irsdkSrv->isInitialized())
-		_irsdkSrv->resetSampleVars();
+	if (irsdkServer::instance()->isInitialized())
+		irsdkServer::instance()->resetSampleVars();
 
-	if (_irsdkSrv->isHeaderFinalized())
-		_irsdkSrv->pollSampleVars();
+	if (irsdkServer::instance()->isHeaderFinalized())
+		irsdkServer::instance()->pollSampleVars();
+
 }
+
 
 void COpenDataLogger::UpdateTelemetryInfo(CarData& data)
 {
 	memcpy(&_carData, &data, sizeof(CarData));
 
-#ifdef _DEBUG
+#ifdef _DEBUG_LOG
 	stringstream ss;
 	ss << "RPM: " << _carData.rpm;
 	writeToLog(string(ss.str().c_str()));
@@ -211,7 +215,7 @@ void COpenDataLogger::UpdateSessionInfo(SessionData& data)
 {
 	memcpy(&_sessionData, &data, sizeof(SessionData));
 
-#ifdef _DEBUG
+#ifdef _DEBUG_LOG
 	stringstream ss;
 	ss << "time: " << _sessionData.sessionTime;
 	writeToLog(string(ss.str().c_str()));
@@ -229,6 +233,25 @@ void COpenDataLogger::UpdateSessionInfoString(SessionInfoStringData& data)
 
 }
 
+void COpenDataLogger::UpdateSessionInfoString(const char* sessionStr)
+{
+	// TODO: create hash value to check if the sessionInfoString has changed
+	// and only update if it has changed
+
+	irsdkServer::instance()->regSessionInfo(sessionStr);
+
+#ifdef _DEBUG
+
+	FILE* fp = NULL;
+	fopen_s(&fp, "ExampleYaml.txt", "w");
+	if (fp != NULL)
+		fwrite(sessionStr, sizeof(char), strlen(sessionStr) + 1, fp);
+	fclose(fp);
+	fp = NULL;
+
+#endif
+}
+
 void COpenDataLogger::StartSession()
 {
 
@@ -241,8 +264,8 @@ void COpenDataLogger::StopSession()
 
 void COpenDataLogger::StartStint()
 {
-	if (!_irsdkSrv->isDiskLoggingEnabled())
-		_irsdkSrv->toggleDiskLogging();
+	if (!irsdkServer::instance()->isDiskLoggingEnabled())
+		irsdkServer::instance()->toggleDiskLogging();
 	// --- logging to disk enabled, so the next call to pollSampleVars opens a new file
 
 }
@@ -250,13 +273,13 @@ void COpenDataLogger::StartStint()
 void COpenDataLogger::StopStint()
 {
 	// write latest values to file
-	_irsdkSrv->pollSampleVars();
+	irsdkServer::instance()->pollSampleVars();
 
-	if (_irsdkSrv->isDiskLoggingEnabled()) // disk logging is turned on
-		_irsdkSrv->toggleDiskLogging(); // turn logging on or off
+	if (irsdkServer::instance()->isDiskLoggingEnabled()) // disk logging is turned on
+		irsdkServer::instance()->toggleDiskLogging(); // turn logging on or off
 
 	// logging to disk is diabled; call pollSampleVars once again to finalize and close the file
-	_irsdkSrv->pollSampleVars();
+	irsdkServer::instance()->pollSampleVars();
 }
 
 
@@ -324,11 +347,11 @@ void COpenDataLogger::SetVehicleAndTrackName(string& vehicleName, string& trackN
 	_trackName = trackName;
 
 	string str = string(_dataLogPath.begin(), _dataLogPath.end());
-	_irsdkSrv->SetDataLogPath(str.c_str());
+	irsdkServer::instance()->SetDataLogPath(str.c_str());
 	writeToLog(str.c_str());
 
 	str = _vehicleName + "-" + _trackName;
-	_irsdkSrv->SetDataLogFile(str.c_str());
+	irsdkServer::instance()->SetDataLogFile(str.c_str());
 	writeToLog(str.c_str());
 
 #ifdef _DEBUG

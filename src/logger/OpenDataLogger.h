@@ -107,7 +107,7 @@ namespace OpenDataLogger {
 
 	struct SessionData
 	{
-		float sessionTime;
+		double sessionTime;
 		UINT sessionState;
 		float sessionTimeLeft;
 		int sessionLapsLeft;
@@ -194,6 +194,7 @@ namespace OpenDataLogger {
 		void UpdateTimingInfo(TimingData& data);
 		void UpdateData();
 		void UpdateSessionInfoString(SessionInfoStringData& data);
+		void UpdateSessionInfoString(const char* sessionStr);
 
 		void StartSession();
 		void StopSession();
@@ -215,7 +216,7 @@ namespace OpenDataLogger {
 		SessionData _sessionData;
 		TimingData _timingData;
 
-		irsdkServer* _irsdkSrv; // instance handle of irsdkServer
+		//irsdkServer* _irsdkSrv; // instance handle of irsdkServer
 
 		ofstream _log;	// error / debug logfile
 		void writeToLog(string& msg);
