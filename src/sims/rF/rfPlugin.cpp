@@ -27,22 +27,93 @@ extern "C" __declspec(dllexport) PluginObjectInfo* GetPluginObjectInfo(const uns
 
 PluginObjectInfo* rfPlugin::GetInfo() { return (PluginObjectInfo*)&g_pluginInfo; }
 
+struct _thData
+{
+	string dir;
+	bool status;
+};
 
+///
+/// to prevent a delay, during sound playback, on the main thread
+/// the playback call is done on a seperate thread
+///
+DWORD WINAPI rfPlugin::SoundPlaybackThreadRoutine(void* param)
+{
+	_thData* data = (_thData*)param;
+
+	if (data != nullptr) {
+		if (data->status) {
+
+			string dir = data->dir + "\\Plugins\\openDataLogger\\LoggerOn";
+			PlaySoundA(dir.c_str(), NULL, SND_FILENAME);
+		}
+		else {
+
+			string dir = data->dir + "\\Plugins\\openDataLogger\\LoggerOff";
+			PlaySoundA(dir.c_str(), NULL, SND_FILENAME);
+
+		}
+
+		// release the prevoiusly allocated memory for the threads data
+		// was allocated in switchDataLogger() method
+		delete data;
+		data = nullptr;
+	}
+
+	return 0;
+}
+
+///
+/// setup the needed data for the playback thread
+///
+void rfPlugin::switchDataLogger()
+{
+	_thData* data = new _thData;
+	memset(data, 0, sizeof(_thData));
+
+	data->dir = _currentDir;
+	data->status = _dataLoggerEnabled;
+
+	if (_dataLoggerEnabled) {
+		_odl->StartStint();
+		_stintRunning = true;
+	}
+	else if ((_stintRunning) && (!_dataLoggerEnabled)){
+		_odl->StopStint();
+		_stintRunning = false;
+	}
+
+	CreateThread(NULL, 0, &rfPlugin::SoundPlaybackThreadRoutine, (void*)data, 0, NULL);
+}
+
+
+///
+/// default constructor
+///
 rfPlugin::rfPlugin()
 {
 	_odl = NULL;
-
-#ifdef _DEBUG
-	_dbg = NULL;
 	char dir[1024];
 	GetCurrentDirectoryA(1024, dir);
 
+	_currentDir = string(dir);
+	_dataLoggerEnabled = false;
+
+#ifdef _DEBUG
+	_dbg = NULL;
+
 	_dbg = new DebugLog(std::string(dir));
-	if (_dbg != NULL)
+	if (_dbg != NULL) {
 		_dbg->Log(string("Constructor"), __FILE__, __LINE__, "", __FUNCTION__);
+		_dbg->Log(string(string("current directory: " + _currentDir)), __FILE__, __LINE__, "", __FUNCTION__);
+	}
 #endif
 }
 
+
+///
+/// default destructor
+///
 rfPlugin::~rfPlugin()
 {
 #ifdef _DEBUG
@@ -60,6 +131,7 @@ rfPlugin::~rfPlugin()
 ///
 /// void Startup()
 /// - called when plugin is loaded (at sim start)
+///
 void rfPlugin::Startup()
 {
 	_odl = new COpenDataLogger(std::string("rFactor"));
@@ -74,6 +146,7 @@ void rfPlugin::Startup()
 /// 
 /// void Shutdown()
 /// - called when plugin is unloaded (at sim shutdown)
+///
 void rfPlugin::Shutdown()
 {
 	if (_odl != NULL) {
@@ -93,6 +166,7 @@ void rfPlugin::Shutdown()
 ///
 /// StartSession()
 /// - called when session is started (during track loading)
+///
 void rfPlugin::StartSession()
 {
 #ifdef _DEBUG
@@ -115,7 +189,8 @@ void rfPlugin::StartSession()
 
 ///
 /// EndSession
-/// - 
+/// - called when leaving the session
+///
 void rfPlugin::EndSession()
 {
 	_odl->StopSession();
@@ -123,17 +198,23 @@ void rfPlugin::EndSession()
 
 ///
 /// EnterRealtime
-/// -
+/// - called when leaving the garage (monitor screen)
+///
 void rfPlugin::EnterRealtime()
 {
+
 	_maxEngineRpm = -1;
 	_sampleRate = -1;
 	_isInGarage = false;
 
-	if (!_stintRunning) {
-		_odl->StartStint();
-		_stintRunning = true;
-	}
+	switchDataLogger();
+
+	_stintRunning = true;
+
+	//if (!_stintRunning) {
+	//	_odl->StartStint();
+	//	_stintRunning = true;
+	//}
 
 #ifdef _DEBUG
 	_dbg->Log(string("Enter Realtime called"), __FILE__, __LINE__, "", __FUNCTION__);
@@ -142,16 +223,18 @@ void rfPlugin::EnterRealtime()
 
 ///
 /// ExitRealtime
-// - 
+/// - called when returning to garage (monitor screen)
+/// 
 void rfPlugin::ExitRealtime()
 {
 	_isInGarage = true;
 	_startFuel = -1;
 
-	if (_stintRunning) {
+	if (_stintRunning && _dataLoggerEnabled) {
 		_odl->StopStint();
-		_stintRunning = false;
 	}
+
+	_stintRunning = false;
 
 #ifdef _DEBUG
 	_dbg->Log(string("Exit Realtime called"), __FILE__, __LINE__, "", __FUNCTION__);
@@ -163,9 +246,11 @@ void rfPlugin::ExitRealtime()
 ///
 void rfPlugin::UpdateTelemetry(const TelemInfoV2& info)
 {
+	_sessionTime += info.mDeltaTime; // session time continues to run even if not on track
+
 	if (_newSession) {
 
-		// if this is the first call after entering realtime, set vehicle and track name
+		// if this is the first call after loading a new session, set vehicle and track name
 		// (used in logfile name)
 		_odl->SetVehicleAndTrackName(string(info.mVehicleName), string(info.mTrackName));
 		_newSession = false;
@@ -186,27 +271,43 @@ void rfPlugin::UpdateTelemetry(const TelemInfoV2& info)
 		_odl->SetSampleRate(_sampleRate);
 	}
 
-	_sessionTime += info.mDeltaTime; // session time continues to run even if not on track
 
 	CarData cd = { 0 };
 	SessionData sd = { 0 };
 
-#ifdef _DEBUG
-
-	if (_sr == 0)
-		_sr = _sessionTime;
-#endif
-
-
 	if (!_isInGarage) {
+		// only log data to file if car is on track and logger is running
+
+		USHORT keyState = GetAsyncKeyState(VK_CONTROL);
+		if (keyState & 0x8000) {
+			keyState = GetAsyncKeyState(0x4D); // 0x4D = M key
+			if (keyState & 0x8000) {
+				if (_dataLoggerEnableKeyDown == false && (_sessionTime - _dataLoggerKeyDelta) > 1.0f) {
+
+					// only switch the data logger if the enable key was previously released and the time span between
+					// the key presses were at least one second;
+					// this prevents the data logger and sound playback from bouncing between states and ending up in the
+					// wrong state
+					// -> remember UpdateTelemetry is called 90 times per second!
+					_dataLoggerEnableKeyDown = true;
+					_dataLoggerKeyDelta = _sessionTime;
+
+					_dataLoggerEnabled = !_dataLoggerEnabled;
+
+					// TODO: toggle actual data logger on/off
+
+					switchDataLogger();
+				}
+			}
+		}
+		else {
+			_dataLoggerEnableKeyDown = false;
+		}
+	}
+
+	if (!_isInGarage && _dataLoggerEnabled) {
 
 		sd.sessionTime = _sessionTime;
-
-#ifdef _DEBUG
-		stringstream ss;
-		ss << "elapsed time: " << sd.sessionTime << endl;
-		_dbg->Log(string(ss.str().c_str()), __FILE__, __LINE__, "", __FUNCTION__);
-#endif
 
 		if (_playerVehicleIdx != -1) {
 
@@ -247,10 +348,6 @@ void rfPlugin::UpdateTelemetry(const TelemInfoV2& info)
 		cd.rpm = info.mEngineRPM;
 		cd.speed = (float)(sqrt((float)(pow(info.mLocalVel.x, 2.0f) + pow(info.mLocalVel.y, 2.0f) + pow(info.mLocalVel.z, 2.0f))));
 
-#ifdef _DEBUG
-		ss << "speed: " << cd.speed << endl;
-		_dbg->Log(string(ss.str().c_str()), __FILE__, __LINE__, "", __FUNCTION__);
-#endif
 		cd.steeringWheelAngle = -1;
 		cd.throttle = info.mUnfilteredThrottle;
 		cd.tractionControl = -1;
@@ -322,7 +419,6 @@ void rfPlugin::UpdateTelemetry(const TelemInfoV2& info)
 		_startFuel = info.mFuel;
 	}
 }
-
 ///
 /// UpdateScoring
 /// - called 2 times a second to update scoring and competitor data
@@ -373,8 +469,8 @@ void rfPlugin::UpdateScoring(const ScoringInfoV2& info)
 	FILE* fp = NULL;
 	fopen_s(&fp, "ResultsStream.txt", "w");
 	if (fp != NULL) {
-		//fwrite(info.mResultsStream, 1, strlen(info.mResultsStream) + 1, fp);
-		fprintf(fp, "%s", info.mResultsStream);
+		fwrite(info.mResultsStream, 1, strlen(info.mResultsStream) + 1, fp);
+		//fprintf(fp, "%s", info.mResultsStream);
 	}
 	fclose(fp);
 #endif

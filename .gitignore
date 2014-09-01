@@ -154,3 +154,7 @@ $RECYCLE.BIN/
 
 # Mac desktop service store files
 .DS_Store
+
+# project specific
+Win32/test/test.vcxproj
+Win32/test/main.cpp

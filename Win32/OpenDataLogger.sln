@@ -72,7 +72,6 @@ Global
 		{EC91F65F-F2C3-4847-A5AD-C98EEE7435E0}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{EC91F65F-F2C3-4847-A5AD-C98EEE7435E0}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{EC91F65F-F2C3-4847-A5AD-C98EEE7435E0}.Debug|Win32.ActiveCfg = Debug|Win32
-		{EC91F65F-F2C3-4847-A5AD-C98EEE7435E0}.Debug|Win32.Build.0 = Debug|Win32
 		{EC91F65F-F2C3-4847-A5AD-C98EEE7435E0}.Release|Any CPU.ActiveCfg = Release|Win32
 		{EC91F65F-F2C3-4847-A5AD-C98EEE7435E0}.Release|Mixed Platforms.ActiveCfg = Release|Win32
 		{EC91F65F-F2C3-4847-A5AD-C98EEE7435E0}.Release|Mixed Platforms.Build.0 = Release|Win32

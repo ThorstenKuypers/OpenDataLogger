@@ -55,7 +55,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>openDatalogger.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>openDatalogger.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Users\thorsten\Documents\GitHub\OpenDataLogger\bin\openDatalogger\Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

@@ -52,9 +52,14 @@ namespace rf_plugin
 		bool WantsScoringUpdates() { return(true); } 
 		void UpdateScoring(const ScoringInfoV2 &info);
 
+		//bool WantsGraphicsUpdates() { return(true); }
+		//void UpdateGraphics(const GraphicsInfo &info);
+
 	private:
 
 		virtual void YamlUpdate(void*);
+		void switchDataLogger();
+		static DWORD WINAPI SoundPlaybackThreadRoutine(void* param);
 
 		COpenDataLogger* _odl;	// openDataLogger instance
 
@@ -76,7 +81,10 @@ namespace rf_plugin
 		ScoringInfoV2 _scoringInfo;	// latest scoring info (partial info; without vehicle array update)
 		VehicleScoringInfoV2 _playerVehicleInfo; // VehicleScoringInfo of player
 
-		bool _dataLoggerEnabled;
+		bool _dataLoggerEnabled; 
+		bool _dataLoggerEnableKeyDown; // status of key to enable the logger (pressed/released)
+		double _dataLoggerKeyDelta;		// time delta since the last time the data logger enable key was pressed
+
 		string _currentDir;	// current directory; usually the main directory of the sim
 
 #ifdef _DEBUG
