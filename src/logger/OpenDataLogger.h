@@ -206,11 +206,14 @@ namespace OpenDataLogger {
 		void SetVehicleAndTrackName(string& vehicleName, string& trackName);
 
 		void SetSampleRate(int sampleRate);
+		int GetSampleRate() {}
 		void SetTrackLength(float length) { _trackLength = length; }
+
+		std::wstring& GetLoggerRootPath() { return _rootPath; }
 
 	private:
 
-		// check if the ODL folder structure exists
+		// checks if the ODL folder structure exists
 		void checkFolderStructure();
 
 		// load configuration data from ini file

@@ -17,7 +17,7 @@ namespace rf_plugin
 
 	class rfPlugin : public InternalsPluginV3, CBasePlugin
 	{
-	public:	
+	public:
 
 		rfPlugin();
 		~rfPlugin();
@@ -26,8 +26,7 @@ namespace rf_plugin
 		void Destroy()
 		{
 #ifdef _DEBUG
-			if (_dbg != nullptr)
-				_dbg->Log(string("PluginObjectInfo destroyed"), __FILE__, __LINE__, "", __FUNCTION__);
+			_dbg->Log(string("PluginObjectInfo destroyed"), __FILE__, __LINE__, "", __FUNCTION__);
 #endif
 			Shutdown();
 
@@ -49,7 +48,7 @@ namespace rf_plugin
 		bool WantsTelemetryUpdates() { return true; }
 		void UpdateTelemetry(const TelemInfoV2& info);
 
-		bool WantsScoringUpdates() { return(true); } 
+		bool WantsScoringUpdates() { return(true); }
 		void UpdateScoring(const ScoringInfoV2 &info);
 
 		//bool WantsGraphicsUpdates() { return(true); }
@@ -58,39 +57,10 @@ namespace rf_plugin
 	private:
 
 		virtual void YamlUpdate(void*);
-		void switchDataLogger();
-		static DWORD WINAPI SoundPlaybackThreadRoutine(void* param);
-
-		COpenDataLogger* _odl;	// openDataLogger instance
-
-		DWORD _sessionID;
-
-		double _sessionTime;
-		float _maxEngineRpm;
-		bool _isInGarage;
-		bool _stintRunning;
-
-		bool _newSession;
-
-		int _sampleRate;
-
-		float _startFuel; // initial fuel level (as in setup)
-		float _trackLength;
-		long _playerVehicleIdx;	// array index of players vehicle
 
 		ScoringInfoV2 _scoringInfo;	// latest scoring info (partial info; without vehicle array update)
 		VehicleScoringInfoV2 _playerVehicleInfo; // VehicleScoringInfo of player
 
-		bool _dataLoggerEnabled; 
-		bool _dataLoggerEnableKeyDown; // status of key to enable the logger (pressed/released)
-		double _dataLoggerKeyDelta;		// time delta since the last time the data logger enable key was pressed
-
-		string _currentDir;	// current directory; usually the main directory of the sim
-
-#ifdef _DEBUG
-		DebugLog* _dbg;
-		double _sr; // measure UpdateScoring call rate
-#endif
 	};
 
 }

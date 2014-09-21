@@ -8,6 +8,7 @@
 #include <vector>
 #include <Windows.h>
 #include <ShlObj.h>
+#include <memory>
 
 using namespace std;
 
@@ -144,8 +145,56 @@ void loadPluginConfigFromFile(string filename)
 
 #define LOGFILE "odl.ini"
 
+
+class A
+{
+public:
+	A(string s)
+	{
+		_s = s;
+	}
+
+	~A()
+	{
+		int x = 0;
+	}
+
+	void f()
+	{
+		printf("...\n", _s.c_str());
+	}
+
+private:
+	string _s;
+};
+
+class B
+{
+public:
+	B(string s)
+	{
+		_s = s;
+		_a = make_unique<A>(s);
+	}
+
+	~B()
+	{
+	}
+
+	void f()
+	{
+		_a->f();
+	}
+private:
+	string _s;
+	unique_ptr<A> _a;
+};
+
 int main(void)
 {
+	B b("test");
+	b.f();
+
 	//CheckOdlPath();
 
 	//wchar_t d[1024];
@@ -179,14 +228,14 @@ int main(void)
 	//log.flush();
 	//log.close();
 
-	char dir[MAX_PATH];
-	GetCurrentDirectory(MAX_PATH, dir);
+	//char dir[MAX_PATH];
+	//GetCurrentDirectory(MAX_PATH, dir);
 
-	string path = string(dir) + "\\" + LOGFILE;
+	//string path = string(dir) + "\\" + LOGFILE;
 
-	loadPluginConfigFromFile(path);
+	//loadPluginConfigFromFile(path);
 
-	printf("exiting...\n");
+	//printf("exiting...\n");
 	system("PAUSE");
 	return 0;
 }

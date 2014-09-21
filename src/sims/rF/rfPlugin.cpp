@@ -27,103 +27,31 @@ extern "C" __declspec(dllexport) PluginObjectInfo* GetPluginObjectInfo(const uns
 
 PluginObjectInfo* rfPlugin::GetInfo() { return (PluginObjectInfo*)&g_pluginInfo; }
 
-struct _thData
+
+rfPlugin::rfPlugin() : CBasePlugin()
 {
-	string dir;
-	bool status;
-};
-
-///
-/// to prevent a delay, during sound playback, on the main thread
-/// the playback call is done on a seperate thread
-///
-DWORD WINAPI rfPlugin::SoundPlaybackThreadRoutine(void* param)
-{
-	_thData* data = (_thData*)param;
-
-	if (data != nullptr) {
-		if (data->status) {
-
-			string dir = data->dir + "\\Plugins\\openDataLogger\\LoggerOn";
-			PlaySoundA(dir.c_str(), NULL, SND_FILENAME);
-		}
-		else {
-
-			string dir = data->dir + "\\Plugins\\openDataLogger\\LoggerOff";
-			PlaySoundA(dir.c_str(), NULL, SND_FILENAME);
-
-		}
-
-		// release the prevoiusly allocated memory for the threads data
-		// was allocated in switchDataLogger() method
-		delete data;
-		data = nullptr;
-	}
-
-	return 0;
-}
-
-///
-/// setup the needed data for the playback thread
-///
-void rfPlugin::switchDataLogger()
-{
-	_thData* data = new _thData;
-	memset(data, 0, sizeof(_thData));
-
-	data->dir = _currentDir;
-	data->status = _dataLoggerEnabled;
-
-	if (_dataLoggerEnabled) {
-		_odl->StartStint();
-		_stintRunning = true;
-	}
-	else if ((_stintRunning) && (!_dataLoggerEnabled)){
-		_odl->StopStint();
-		_stintRunning = false;
-	}
-
-	CreateThread(NULL, 0, &rfPlugin::SoundPlaybackThreadRoutine, (void*)data, 0, NULL);
-}
-
-
-///
-/// default constructor
-///
-rfPlugin::rfPlugin()
-{
-	_odl = NULL;
 	char dir[1024];
 	GetCurrentDirectoryA(1024, dir);
 
 	_currentDir = string(dir);
 	_dataLoggerEnabled = false;
 
-#ifdef _DEBUG
-	_dbg = NULL;
+	_odl = make_unique<COpenDataLogger>(std::string("rFactor"));
 
-	_dbg = new DebugLog(std::string(dir));
-	if (_dbg != NULL) {
-		_dbg->Log(string("Constructor"), __FILE__, __LINE__, "", __FUNCTION__);
-		_dbg->Log(string(string("current directory: " + _currentDir)), __FILE__, __LINE__, "", __FUNCTION__);
-	}
+#ifdef _DEBUG
+	_dbg = make_unique<DebugLog>(std::string(dir));
+	_dbg->Log(string("Constructor"), __FILE__, __LINE__, "", __FUNCTION__);
+	_dbg->Log(string(string("current directory: " + _currentDir)), __FILE__, __LINE__, "", __FUNCTION__);
 #endif
 }
 
 
-///
-/// default destructor
-///
 rfPlugin::~rfPlugin()
 {
 #ifdef _DEBUG
-	if (_dbg != NULL) {
 
-		_dbg->Log(string("Destructor"), __FILE__, __LINE__, "", __FUNCTION__);
+	_dbg->Log(string("Destructor"), __FILE__, __LINE__, "", __FUNCTION__);
 
-		delete _dbg;
-		_dbg = NULL;
-	}
 #endif
 }
 
@@ -134,11 +62,10 @@ rfPlugin::~rfPlugin()
 ///
 void rfPlugin::Startup()
 {
-	_odl = new COpenDataLogger(std::string("rFactor"));
 
 #ifdef _DEBUG
 	char msg[512];
-	sprintf_s(msg, 512, "DataLogger started! <ODL ref: _odl=%08X>", _odl);
+	sprintf_s(msg, 512, "DataLogger started! <ODL ref: _odl=%08X>", &_odl);
 	_dbg->Log(string(msg), __FILE__, __LINE__, "", __FUNCTION__);
 #endif
 }
@@ -149,17 +76,10 @@ void rfPlugin::Startup()
 ///
 void rfPlugin::Shutdown()
 {
-	if (_odl != NULL) {
-		delete _odl;
-		_odl = NULL;
-	}
-
 #ifdef _DEBUG
-	if (_dbg != NULL) {
-		char msg[512];
-		sprintf_s(msg, 512, "DataLogger shut down! <ODL ref: _odl=%08X>", _odl);
-		_dbg->Log(string(msg), __FILE__, __LINE__, "", __FUNCTION__);
-	}
+	char msg[512];
+	sprintf_s(msg, 512, "DataLogger shut down! <ODL ref: _odl=%08X>", &_odl);
+	_dbg->Log(string(msg), __FILE__, __LINE__, "", __FUNCTION__);
 #endif
 }
 
@@ -211,11 +131,6 @@ void rfPlugin::EnterRealtime()
 
 	_stintRunning = true;
 
-	//if (!_stintRunning) {
-	//	_odl->StartStint();
-	//	_stintRunning = true;
-	//}
-
 #ifdef _DEBUG
 	_dbg->Log(string("Enter Realtime called"), __FILE__, __LINE__, "", __FUNCTION__);
 #endif
@@ -262,11 +177,9 @@ void rfPlugin::UpdateTelemetry(const TelemInfoV2& info)
 		_sampleRate = (int)round(((float)1.0f / (float)info.mDeltaTime)/* + (float)0.5f*/);
 
 #ifdef _DEBUG
-		if (_dbg != NULL) {
-			char msg[512];
-			sprintf_s(msg, 512, "Sample rate @: %i", _sampleRate);
-			_dbg->Log(string(msg), __FILE__, __LINE__, "", __FUNCTION__);
-		}
+		char msg[512];
+		sprintf_s(msg, 512, "Sample rate @: %i", _sampleRate);
+		_dbg->Log(string(msg), __FILE__, __LINE__, "", __FUNCTION__);
 #endif
 		_odl->SetSampleRate(_sampleRate);
 	}
@@ -278,31 +191,7 @@ void rfPlugin::UpdateTelemetry(const TelemInfoV2& info)
 	if (!_isInGarage) {
 		// only log data to file if car is on track and logger is running
 
-		USHORT keyState = GetAsyncKeyState(VK_CONTROL);
-		if (keyState & 0x8000) {
-			keyState = GetAsyncKeyState(0x4D); // 0x4D = M key
-			if (keyState & 0x8000) {
-				if (_dataLoggerEnableKeyDown == false && (_sessionTime - _dataLoggerKeyDelta) > 1.0f) {
-
-					// only switch the data logger if the enable key was previously released and the time span between
-					// the key presses were at least one second;
-					// this prevents the data logger and sound playback from bouncing between states and ending up in the
-					// wrong state
-					// -> remember UpdateTelemetry is called 90 times per second!
-					_dataLoggerEnableKeyDown = true;
-					_dataLoggerKeyDelta = _sessionTime;
-
-					_dataLoggerEnabled = !_dataLoggerEnabled;
-
-					// TODO: toggle actual data logger on/off
-
-					switchDataLogger();
-				}
-			}
-		}
-		else {
-			_dataLoggerEnableKeyDown = false;
-		}
+		checkLoggerKeyState();
 	}
 
 	if (!_isInGarage && _dataLoggerEnabled) {
@@ -334,32 +223,32 @@ void rfPlugin::UpdateTelemetry(const TelemInfoV2& info)
 		cd.lap = info.mLapNumber;
 		//cd.lapDist = 0;
 		//cd.lapDistPct = 0;
-		cd.latAccel = info.mLocalAccel.x;
-		cd.latPos = info.mPos.x;
-		cd.longAccel = info.mLocalAccel.z;
-		cd.longPos = info.mPos.z;
+		cd.latAccel = (float)info.mLocalAccel.x;
+		cd.latPos = (float)info.mPos.x;
+		cd.longAccel = (float)(info.mLocalAccel.z * -1);
+		cd.longPos = (float)info.mPos.z;
 		cd.manifoldPress = -1;
 		cd.oilLevel = -1;
 		cd.oilTemp = info.mEngineOilTemp;
-		//cd.pitch
-		cd.pitchRate = info.mLocalRot.x;
-		//cd.roll
-		cd.rollRate = info.mLocalRot.z;
+		cd.pitch = (float)info.mLocalRot.x;
+		//cd.pitchRate = 
+		cd.roll = (float)info.mLocalRot.z;
+		//cd.rollRate = (float)info.mLocalRot.z;
 		cd.rpm = info.mEngineRPM;
 		cd.speed = (float)(sqrt((float)(pow(info.mLocalVel.x, 2.0f) + pow(info.mLocalVel.y, 2.0f) + pow(info.mLocalVel.z, 2.0f))));
 
 		cd.steeringWheelAngle = -1;
 		cd.throttle = info.mUnfilteredThrottle;
 		cd.tractionControl = -1;
-		cd.velocity[0] = info.mLocalVel.x;
-		cd.velocity[1] = info.mLocalVel.y;
-		cd.velocity[2] = info.mLocalVel.z;
-		cd.vertAccel = info.mLocalAccel.y;
+		cd.velocity[0] = (float)(info.mLocalVel.z * -1);
+		cd.velocity[1] = (float)(info.mLocalVel.x * -1);;
+		cd.velocity[2] = (float)info.mLocalVel.y;
+		cd.vertAccel = (float)(info.mLocalAccel.y * -1);
 		cd.voltage = -1;
 		cd.waterLevel = -1;
 		cd.waterTemp = info.mEngineWaterTemp;
-		//cd.yaw
-		cd.yawRate = info.mLocalRot.y;
+		cd.yaw = (float)info.mLocalRot.y;
+		//cd.yawRate = 
 
 		cd.wheels[0].brakeLinePress = -1;
 		cd.wheels[0].pressure = info.mWheel[0].mPressure;
@@ -492,12 +381,10 @@ void rfPlugin::YamlUpdate(void* data)
 	memset(&_driverInfo, 0, sizeof(_driverInfo));
 
 	// WeekendInfo
-	//strncpy_s(_weekendInfo.TrackName, IRSDK_MAX_STRING, info->mTrackName, IRSDK_MAX_STRING);
 	_weekendInfo.TrackName = info->mTrackName;
 	_weekendInfo.SessionID = _sessionID;
 	_weekendInfo.WeekendOptions.NumStarters = info->mNumVehicles;
 	_weekendInfo.TrackLength = (float)info->mLapDist / 1000;
-	//_weekendInfo.TrackID = djb2((unsigned char *)&info->mTrackName) & 0xFFFFFF;
 
 	if (info->mDarkCloud < 0.25)
 		_weekendInfo.TrackSkies = "Clear";
@@ -526,7 +413,6 @@ void rfPlugin::YamlUpdate(void* data)
 
 	// _sessionInfo
 	_sessionInfo.Sessions[info->mSession].SessionNum = info->mSession;
-	//_sessionInfo.Sessions[info->mSession].SessionTime = (float)info->mEndET;
 	_sessionInfo.Sessions[info->mSession].SessionTime = (float)info->mCurrentET;
 
 #ifdef _DEBUG
@@ -540,25 +426,21 @@ void rfPlugin::YamlUpdate(void* data)
 	case 2:
 	case 3:
 	case 4:
-		//strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Practice");
 		_sessionInfo.Sessions[info->mSession].SessionType = "Practice";
 		break;
 	case 5:
 	case 6:
 	case 7:
 	case 8:
-		//strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Qualify");
 		_sessionInfo.Sessions[info->mSession].SessionType = "Qualify";
 		break;
 	case 9:
-		//strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Warmup");
 		_sessionInfo.Sessions[info->mSession].SessionType = "Warmup";
 		break;
 	case 10:
 	case 11:
 	case 12:
 	case 13:
-		//strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Race");
 		_sessionInfo.Sessions[info->mSession].SessionType = "Race";
 		break;
 	default:
@@ -566,10 +448,8 @@ void rfPlugin::YamlUpdate(void* data)
 	}
 
 	if (info->mMaxLaps >= 2147483647)
-		//strcpy_s(_sessionInfo.Sessions[info->mSession].SessionLaps, IRSDK_MAX_STRING, "unlimited");
 		_sessionInfo.Sessions[info->mSession].SessionLaps = "unlimited";
 	else
-		//sprintf_s(_sessionInfo.Sessions[info->mSession].SessionLaps, IRSDK_MAX_STRING, "%i", info->mMaxLaps);
 		_sessionInfo.Sessions[info->mSession].SessionLaps = std::to_string(info->mMaxLaps);
 
 
@@ -598,19 +478,15 @@ void rfPlugin::YamlUpdate(void* data)
 		switch (vinfo.mFinishStatus) // 0=none, 1=finished, 2=dnf, 3=dq
 		{
 		case 0:
-			//strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Running");
 			_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr = "Running";
 			break;
 		case 1:
-			//strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Finished");
 			_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr = "Finished";
 			break;
 		case 2:
-			//strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "DNF");
 			_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr = "DNF";
 			break;
 		case 3:
-			//strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Disqualified");
 			_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr = "Disqualified";
 			break;
 		default:

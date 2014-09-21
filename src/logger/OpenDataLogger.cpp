@@ -4,7 +4,7 @@
 
 using namespace OpenDataLogger;
 
-COpenDataLogger::COpenDataLogger(string& simName)
+COpenDataLogger::COpenDataLogger(string& simName) : COpenDataLogger()
 {
 	// register irsdk variables with server class
 	// (default iRacing variables)
@@ -104,12 +104,6 @@ COpenDataLogger::COpenDataLogger(string& simName)
 	irsdkVar("LFwearM", &_carData.wheels[LF].wearM, irsdk_float, 1, "LF tire middle percent tread remaining", "%", IRSDK_LOG_DISK);
 	irsdkVar("LFwearR", &_carData.wheels[LF].wearR, irsdk_float, 1, "LF tire right percent tread remaining", "%", IRSDK_LOG_DISK);
 
-
-
-	//irsdkVar("ClutchRPM", &_carData.cl, irsdk_float, 1, "Clutch RPM", "", IRSDK_LOG_ALL);
-	//irsdkVar("IsInGarage", &g_isInGarage, irsdk_bool, 1, "is car in garage", "", IRSDK_LOG_LIVE);
-	//irsdkVar("IsOnTrack", &g_isOnTrack, irsdk_bool, 1, "1=Car on track physics running", "", IRSDK_LOG_ALL);
-
 	memset(&_carData, 0, sizeof(CarData));
 	memset(&_timingData, 0, sizeof(TimingData));
 	memset(&_sessionData, 0, sizeof(SessionData));
@@ -122,15 +116,15 @@ COpenDataLogger::COpenDataLogger(string& simName)
 	wstring ws = wstring(wss.str().c_str());
 	std::string lfp = std::string(ws.begin(), ws.end());
 
-	_log = ofstream(lfp, std::ios_base::out);
+	_log.open(lfp, std::ios_base::out);
 
 	//_irsdkSrv = irsdkServer::instance();
 
 	stringstream ss;
 	ss << "OpenDataLogger for " << simName << " started";
 	string str = string(ss.str().c_str());
-
 	writeToLog(str);
+
 	str = string(_dataLogPath.begin(), _dataLogPath.end());
 	writeToLog(str);
 }
@@ -348,7 +342,6 @@ void COpenDataLogger::SetVehicleAndTrackName(string& vehicleName, string& trackN
 
 	string str = string(_dataLogPath.begin(), _dataLogPath.end());
 	irsdkServer::instance()->SetDataLogPath(str.c_str());
-	writeToLog(str.c_str());
 
 	str = _vehicleName + "-" + _trackName;
 	irsdkServer::instance()->SetDataLogFile(str.c_str());

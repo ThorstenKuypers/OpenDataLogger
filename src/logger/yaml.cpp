@@ -167,7 +167,7 @@ void CYaml::GenerateSessionInfo(WeekendInfo& weekendinfo, SessionInfo& sessionin
 			yamlStr << "   CarClassShortName: " << driverinfo.Drivers[i].CarClassShortName << endl;
 			yamlStr << "   CarClassRelSpeed: " << driverinfo.Drivers[i].CarClassRelSpeed << endl;
 			yamlStr << "   CarClassLicenseLevel: " << driverinfo.Drivers[i].CarClassLicenseLevel << endl;
-			yamlStr << "   CarClassMaxFuel: " << driverinfo.Drivers[i].CarClassMaxFuel << " %%" << endl;
+			yamlStr << "   CarClassMaxFuel: " << driverinfo.Drivers[i].CarClassMaxFuel << " %" << endl;
 			yamlStr << "   CarClassWeightPenalty: " << driverinfo.Drivers[i].CarClassWeightPenalty << " kg" << endl;
 			yamlStr << "   IRating: " << driverinfo.Drivers[i].IRating << endl;
 			yamlStr << "   LicLevel: " << driverinfo.Drivers[i].LicLevel << endl;

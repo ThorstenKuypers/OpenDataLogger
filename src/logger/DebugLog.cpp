@@ -7,14 +7,14 @@ DebugLog::DebugLog()
 {
 }
 
-DebugLog::DebugLog(std::string& path)
+DebugLog::DebugLog(std::string& path) :
+_file(std::ofstream())
 {
 	std::stringstream wss;
 	wss << path << "\\odldbg.log";
 	std::string dir = std::string(wss.str().c_str());
 
-	_file = std::ofstream(dir, std::ios_base::out);
-
+	_file.open(dir, ios::out);
 }
 
 DebugLog::~DebugLog()
