@@ -492,20 +492,21 @@ void rfPlugin::YamlUpdate(void* data)
 	memset(&_driverInfo, 0, sizeof(_driverInfo));
 
 	// WeekendInfo
-	strncpy_s(_weekendInfo.TrackName, IRSDK_MAX_STRING, info->mTrackName, IRSDK_MAX_STRING);
+	//strncpy_s(_weekendInfo.TrackName, IRSDK_MAX_STRING, info->mTrackName, IRSDK_MAX_STRING);
+	_weekendInfo.TrackName = info->mTrackName;
 	_weekendInfo.SessionID = _sessionID;
 	_weekendInfo.WeekendOptions.NumStarters = info->mNumVehicles;
 	_weekendInfo.TrackLength = (float)info->mLapDist / 1000;
 	//_weekendInfo.TrackID = djb2((unsigned char *)&info->mTrackName) & 0xFFFFFF;
 
 	if (info->mDarkCloud < 0.25)
-		strcpy_s(_weekendInfo.TrackSkies, IRSDK_MAX_STRING, "Clear");
+		_weekendInfo.TrackSkies = "Clear";
 	else if (info->mDarkCloud < 0.5)
-		strcpy_s(_weekendInfo.TrackSkies, IRSDK_MAX_STRING, "Partly Cloudy");
+		_weekendInfo.TrackSkies = "Partly Cloudy";
 	else if (info->mDarkCloud < 0.5)
-		strcpy_s(_weekendInfo.TrackSkies, IRSDK_MAX_STRING, "Mostly Cloudy");
+		_weekendInfo.TrackSkies = "Mostly Cloudy";
 	else
-		strcpy_s(_weekendInfo.TrackSkies, IRSDK_MAX_STRING, "Overcast");
+		_weekendInfo.TrackSkies = "Overcast";
 
 	// mRaining not used
 	_weekendInfo.TrackAirTemp = (float)info->mAmbientTemp;
@@ -539,31 +540,38 @@ void rfPlugin::YamlUpdate(void* data)
 	case 2:
 	case 3:
 	case 4:
-		strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Practice");
+		//strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Practice");
+		_sessionInfo.Sessions[info->mSession].SessionType = "Practice";
 		break;
 	case 5:
 	case 6:
 	case 7:
 	case 8:
-		strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Qualify");
+		//strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Qualify");
+		_sessionInfo.Sessions[info->mSession].SessionType = "Qualify";
 		break;
 	case 9:
-		strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Warmup");
+		//strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Warmup");
+		_sessionInfo.Sessions[info->mSession].SessionType = "Warmup";
 		break;
 	case 10:
 	case 11:
 	case 12:
 	case 13:
-		strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Race");
+		//strcpy_s(_sessionInfo.Sessions[info->mSession].SessionType, IRSDK_MAX_STRING, "Race");
+		_sessionInfo.Sessions[info->mSession].SessionType = "Race";
 		break;
 	default:
 		break;
 	}
 
 	if (info->mMaxLaps >= 2147483647)
-		strcpy_s(_sessionInfo.Sessions[info->mSession].SessionLaps, IRSDK_MAX_STRING, "unlimited");
+		//strcpy_s(_sessionInfo.Sessions[info->mSession].SessionLaps, IRSDK_MAX_STRING, "unlimited");
+		_sessionInfo.Sessions[info->mSession].SessionLaps = "unlimited";
 	else
-		sprintf_s(_sessionInfo.Sessions[info->mSession].SessionLaps, IRSDK_MAX_STRING, "%i", info->mMaxLaps);
+		//sprintf_s(_sessionInfo.Sessions[info->mSession].SessionLaps, IRSDK_MAX_STRING, "%i", info->mMaxLaps);
+		_sessionInfo.Sessions[info->mSession].SessionLaps = std::to_string(info->mMaxLaps);
+
 
 	_sessionInfo.Sessions[info->mSession].ResultsFastestLap.FastestTime = 999999.9f;
 
@@ -590,16 +598,20 @@ void rfPlugin::YamlUpdate(void* data)
 		switch (vinfo.mFinishStatus) // 0=none, 1=finished, 2=dnf, 3=dq
 		{
 		case 0:
-			strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Running");
+			//strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Running");
+			_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr = "Running";
 			break;
 		case 1:
-			strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Finished");
+			//strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Finished");
+			_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr = "Finished";
 			break;
 		case 2:
-			strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "DNF");
+			//strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "DNF");
+			_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr = "DNF";
 			break;
 		case 3:
-			strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Disqualified");
+			//strcpy_s(_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr, IRSDK_MAX_STRING, "Disqualified");
+			_sessionInfo.Sessions[info->mSession].ResultsPositions[i].ReasonOutStr = "Disqualified";
 			break;
 		default:
 			break;
@@ -609,9 +621,12 @@ void rfPlugin::YamlUpdate(void* data)
 		//_driverInfo.Drivers[i].UserID = djb2((unsigned char *)&vinfo.mDriverName) & 0xFFFFFF;
 		//_driverInfo.Drivers[i].CarID = djb2((unsigned char *)&vinfo.mVehicleName) & 0xFFFFFF;
 		//_driverInfo.Drivers[i].CarClassID = djb2((unsigned char *)&vinfo.mVehicleClass) & 0xFFFFFF;
-		strcpy_s(_driverInfo.Drivers[i].UserName, IRSDK_MAX_STRING, vinfo.mDriverName);
-		strcpy_s(_driverInfo.Drivers[i].CarPath, IRSDK_MAX_STRING, vinfo.mVehicleName);
-		strcpy_s(_driverInfo.Drivers[i].CarClassShortName, IRSDK_MAX_STRING, vinfo.mVehicleClass);
+		//strcpy_s(_driverInfo.Drivers[i].UserName, IRSDK_MAX_STRING, vinfo.mDriverName);
+		_driverInfo.Drivers[i].UserName = vinfo.mDriverName;
+		//strcpy_s(_driverInfo.Drivers[i].CarPath, IRSDK_MAX_STRING, vinfo.mVehicleName);
+		_driverInfo.Drivers[i].CarPath = vinfo.mVehicleName;
+		//strcpy_s(_driverInfo.Drivers[i].CarClassShortName, IRSDK_MAX_STRING, vinfo.mVehicleClass);
+		_driverInfo.Drivers[i].CarClassShortName = vinfo.mVehicleClass;
 
 		//if (vinfo.mIsPlayer) {
 		//	_driverInfo.DriverCarIdx = i; // vinfo.mPlace;
@@ -623,5 +638,5 @@ void rfPlugin::YamlUpdate(void* data)
 
 	CYaml::GenerateSessionInfo(_weekendInfo, _sessionInfo, _driverInfo, &sessionInfoStr);
 
-	_odl->UpdateSessionInfoString(sessionInfoStr.c_str());
+	_odl->UpdateSessionInfoString(sessionInfoStr);
 }

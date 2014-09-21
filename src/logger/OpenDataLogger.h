@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <vector>
 #include <ctime>
 #include <typeinfo>
 #include <Windows.h>
@@ -34,12 +35,12 @@ namespace OpenDataLogger {
 	///
 	struct PluginConfig
 	{
-		char logfilePath[MAX_PATH];
+		string logfilePath;
 		bool activateOnStartup;
 		char activationKey;
 		unsigned char activationKeyModifier;
 
-		char dataRate;
+		char sampleRate;
 		bool logAeroData;
 		bool logExtendedWheelData;
 
@@ -194,7 +195,7 @@ namespace OpenDataLogger {
 		void UpdateTimingInfo(TimingData& data);
 		void UpdateData();
 		void UpdateSessionInfoString(SessionInfoStringData& data);
-		void UpdateSessionInfoString(const char* sessionStr);
+		void UpdateSessionInfoString(std::string sessionStr);
 
 		void StartSession();
 		void StopSession();
@@ -211,6 +212,9 @@ namespace OpenDataLogger {
 
 		// check if the ODL folder structure exists
 		void checkFolderStructure();
+
+		// load configuration data from ini file
+		void loadPluginConfigFromFile(string filename);
 
 		CarData _carData;
 		SessionData _sessionData;

@@ -5,6 +5,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <vector>
 #include <Windows.h>
 #include <ShlObj.h>
 
@@ -87,6 +88,61 @@ wstring odlPath;
 //	std::wstring _logPath;
 //};
 
+struct PluginConfig
+{
+	string logfilePath;
+	bool activateOnStartup;
+	char activationKey;
+	unsigned char activationKeyModifier;
+
+	char sampleRate;
+	bool logAeroData;
+	bool logExtendedWheelData;
+
+	// ...
+};
+
+void loadPluginConfigFromFile(string filename)
+{
+	std::vector<std::string> lines;
+	std::string line;
+
+	if (!filename.empty())
+	{
+
+		ifstream fs = ifstream(filename, ios::in);
+
+		do {
+
+			std::getline(fs, line);
+
+			// skip empty lines
+			if (line.empty())
+				continue;
+
+			// skip pure comment lines
+			if (line[0] == '#')
+				continue;
+
+			size_t pos = line.find_first_of("/\t ");
+			if (pos != string::npos) {
+				if (line[pos - 1] == ' ')
+					pos--;
+			}
+			if (pos != std::string::npos && pos != line.length()) {
+				pos += 1;
+
+				line.erase(pos, line.length() - pos);
+			}
+
+			lines.push_back(line);
+		} while (!fs.eof());
+
+		int x = 0;
+	}
+}
+
+#define LOGFILE "odl.ini"
 
 int main(void)
 {
@@ -123,25 +179,12 @@ int main(void)
 	//log.flush();
 	//log.close();
 
-	USHORT keyState = 0;
-	int x = 0;
+	char dir[MAX_PATH];
+	GetCurrentDirectory(MAX_PATH, dir);
 
-	for (;;) {
-		keyState = GetAsyncKeyState(VK_CONTROL);
-		if ((keyState & 0x8000) == 1) {
-			keyState = GetAsyncKeyState(0x4D);
+	string path = string(dir) + "\\" + LOGFILE;
 
-			if ((keyState & 0x8000) == 1) {
-
-				printf(" CTRL+M pressed!");
-			}
-		}
-		x++;
-
-		if (x == 10000)
-			x = 0;
-		Sleep(100);
-	}
+	loadPluginConfigFromFile(path);
 
 	printf("exiting...\n");
 	system("PAUSE");

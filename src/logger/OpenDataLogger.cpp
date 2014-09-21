@@ -233,19 +233,19 @@ void COpenDataLogger::UpdateSessionInfoString(SessionInfoStringData& data)
 
 }
 
-void COpenDataLogger::UpdateSessionInfoString(const char* sessionStr)
+void COpenDataLogger::UpdateSessionInfoString(std::string sessionStr)
 {
 	// TODO: create hash value to check if the sessionInfoString has changed
 	// and only update if it has changed
 
-	irsdkServer::instance()->regSessionInfo(sessionStr);
+	irsdkServer::instance()->regSessionInfo(sessionStr.c_str());
 
 #ifdef _DEBUG
 
 	FILE* fp = NULL;
 	fopen_s(&fp, "ExampleYaml.txt", "w");
 	if (fp != NULL)
-		fwrite(sessionStr, sizeof(char), strlen(sessionStr) + 1, fp);
+		fwrite(sessionStr.c_str(), sizeof(char), sessionStr.length(), fp);
 	fclose(fp);
 	fp = NULL;
 
@@ -359,4 +359,25 @@ void COpenDataLogger::SetVehicleAndTrackName(string& vehicleName, string& trackN
 	//writeToLog(_trackName);
 	//writeToLog(str);
 #endif
+}
+
+void COpenDataLogger::loadPluginConfigFromFile(string filename)
+{
+	std::vector<std::string> lines;
+	std::string line;
+	
+	if (!filename.empty())
+	{
+		ifstream fs = ifstream(filename, ios::in);	
+
+		do {
+
+			if (line.empty())
+				continue;
+
+			if (line[0] == '#')
+				continue;
+
+		} while (!fs.eof());
+	}
 }

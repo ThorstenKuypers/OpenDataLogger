@@ -8,9 +8,6 @@
 
 using namespace std;
 
-// Macros
-#define YPRINT(...)  len += _snprintf(YAMLstring+len, YAMLstring_maxlen-len, __VA_ARGS__)
-
 // limits
 #define MAX_CARS 64
 #define MAX_SESSIONS 14
@@ -18,23 +15,32 @@ using namespace std;
 // YAML structs
 struct WeekendOptions {
 	int NumStarters;
-	char StartingGrid[IRSDK_MAX_STRING];
-	char QualifyScoring[IRSDK_MAX_STRING];		// enum
-	char CourseCautions[IRSDK_MAX_STRING];		// enum
+	//char StartingGrid[IRSDK_MAX_STRING];
+	std::string StartingGrid;
+	//char QualifyScoring[IRSDK_MAX_STRING];		// enum
+	std::string QualifyScoring;
+	//char CourseCautions[IRSDK_MAX_STRING];		// enum
+	std::string CourseCautions;
 	int StandingStart;
-	char Restarts[IRSDK_MAX_STRING];			// enum
-	char WeatherType[IRSDK_MAX_STRING];			// enum
-	char Skies[IRSDK_MAX_STRING];				// enum
-	char WindDirection[IRSDK_MAX_STRING];		// enum
+	//char Restarts[IRSDK_MAX_STRING];			// enum
+	std::string Restarts;
+	//char WeatherType[IRSDK_MAX_STRING];			// enum
+	std::string WeatherType;
+	//char Skies[IRSDK_MAX_STRING];				// enum
+	std::string Skies;
+	//char WindDirection[IRSDK_MAX_STRING];		// enum
+	std::string WindDirection;
 	float WindSpeed;
 	float WeatherTemp;
 	int RelativeHumidity;
 	int FogLevel;
 	int Unofficial;
-	char CommercialMode[IRSDK_MAX_STRING];		// enum
+	//char CommercialMode[IRSDK_MAX_STRING];		// enum
+	std::string CommercialMode;
 	int NightMode;
 	int isFixedSetup;
-	char StrictLapsChecking[IRSDK_MAX_STRING];	// enum
+	//char StrictLapsChecking[IRSDK_MAX_STRING];	// enum
+	std::string StrictLapsChecking;
 	int HasOpenRegistration;
 	int HardcoreLevel;
 };
@@ -45,21 +51,29 @@ struct SectorInfo {
 };
 
 struct WeekendInfo {
-	char TrackName[IRSDK_MAX_STRING];
+	//char TrackName[IRSDK_MAX_STRING];
+	std::string TrackName;
 	unsigned int TrackID;
 	float TrackLength;
-	char TrackDisplayName[IRSDK_MAX_STRING];
-	char TrackDisplayShortName[IRSDK_MAX_STRING];
-	char TrackCity[IRSDK_MAX_STRING];
-	char TrackCountry[IRSDK_MAX_STRING];
+	//char TrackDisplayName[IRSDK_MAX_STRING];
+	std::string TrackDisplayName;
+	//char TrackDisplayShortName[IRSDK_MAX_STRING];
+	std::string TrackDisplayShortName;
+	//char TrackCity[IRSDK_MAX_STRING];
+	std::string TrackCity;
+	//char TrackCountry[IRSDK_MAX_STRING];
+	std::string TrackCountry;
 	float TrackAltitude;
 	double TrackLatitude;
 	double TrackLongitude;
 	int TrackNumTurns;
 	float TrackPitSpeedLimit;
-	char TrackType[IRSDK_MAX_STRING];			// enum
-	char TrackWeatherType[IRSDK_MAX_STRING];	// enum
-	char TrackSkies[IRSDK_MAX_STRING];			// enum
+	//char TrackType[IRSDK_MAX_STRING];			// enum
+	std::string TrackType;
+	//char TrackWeatherType[IRSDK_MAX_STRING];	// enum
+	std::string TrackWeatherType;
+	//char TrackSkies[IRSDK_MAX_STRING];			// enum
+	std::string TrackSkies;
 	float TrackSurfaceTemp;
 	float TrackAirTemp;
 	float TrackAirPressure;
@@ -74,9 +88,12 @@ struct WeekendInfo {
 	int LeagueID;
 	int Offcial;
 	int RaceWeek;
-	char EventType[IRSDK_MAX_STRING];			// enum
-	char Category[IRSDK_MAX_STRING];			// enum
-	char SimMode[IRSDK_MAX_STRING];				// enum
+	//char EventType[IRSDK_MAX_STRING];			// enum
+	std::string EventType;
+	//char Category[IRSDK_MAX_STRING];			// enum
+	std::string Category;
+	//char SimMode[IRSDK_MAX_STRING];				// enum
+	std::string SimMode;
 	WeekendOptions WeekendOptions;
 
 	//int numOfSectors;
@@ -97,7 +114,8 @@ struct ResultPosition {
 	float LapsDriven;
 	int Incidents;
 	int ReasonOutId;
-	char ReasonOutStr[IRSDK_MAX_STRING];	
+	//char ReasonOutStr[IRSDK_MAX_STRING];
+	std::string ReasonOutStr;
 };
 
 struct ResultsFastestLap {
@@ -108,10 +126,12 @@ struct ResultsFastestLap {
 
 struct Session {
 	int SessionNum;
-	char SessionLaps[IRSDK_MAX_STRING];
+	//char SessionLaps[IRSDK_MAX_STRING];
+	std::string SessionLaps;
 	float SessionTime;
 	int SessionNumLapsToAvg;
-	char SessionType[IRSDK_MAX_STRING];
+	//char SessionType[IRSDK_MAX_STRING];
+	std::string SessionType;
 	ResultPosition ResultsPositions[MAX_CARS];
 	ResultsFastestLap ResultsFastestLap;
 	float ResultsAverageLapTime;
@@ -128,15 +148,20 @@ struct SessionInfo {
 
 struct Driver {
 	int CarIdx;
-	char UserName[IRSDK_MAX_STRING];
-	char AbbrevName[IRSDK_MAX_STRING];
-	char Initials[IRSDK_MAX_STRING];
+	//char UserName[IRSDK_MAX_STRING];
+	std::string UserName;
+	//char AbbrevName[IRSDK_MAX_STRING];
+	std::string AbbrevName;
+	//char Initials[IRSDK_MAX_STRING];
+	std::string Initials;
 	int UserID;
 	int CarNumber;
-	char CarPath[IRSDK_MAX_STRING];
+	//char CarPath[IRSDK_MAX_STRING];
+	std::string CarPath;
 	int CarClassID;
 	int CarID;
-	char CarClassShortName[IRSDK_MAX_STRING];
+	//char CarClassShortName[IRSDK_MAX_STRING];
+	std::string CarClassShortName;
 	int CarClassRelSpeed;
 	int CarClassLicenseLevel;
 	float CarClassMaxFuel;
@@ -144,9 +169,12 @@ struct Driver {
 	int IRating;
 	int LicLevel;
 	int LicSubLevel;
-	char LicColor[IRSDK_MAX_STRING];
-	char ClubName[IRSDK_MAX_STRING];
-	char DivisionName[IRSDK_MAX_STRING];
+	//char LicColor[IRSDK_MAX_STRING];
+	std::string LicColor;
+	//char ClubName[IRSDK_MAX_STRING];
+	std::string ClubName;
+	//char DivisionName[IRSDK_MAX_STRING];
+	std::string DivisionName;
 };
 
 struct DriverInfo {
