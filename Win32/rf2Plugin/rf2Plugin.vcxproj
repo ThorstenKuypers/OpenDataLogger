@@ -66,20 +66,24 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\bin\$(ProjectName)\$(Configuration)\</OutDir>
-    <LibraryPath>C:\Users\thorsten\Documents\GitHub\OpenDataLogger\bin\openDatalogger\Debug;$(LibraryPath)</LibraryPath>
+    <OutDir>..\..\bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <LibraryPath>..\..\bin\openDataLogger\$(Configuration)\$(Platform)\;;$(LibraryPath)</LibraryPath>
+    <IntDir>$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LibraryPath>C:\Users\thorsten\Documents\GitHub\OpenDataLogger\bin\openDatalogger\Debug\x64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\bin\openDataLogger\$(Configuration)\$(Platform)\;;$(LibraryPath)</LibraryPath>
     <OutDir>..\..\bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LibraryPath>C:\Users\thorsten\Documents\GitHub\OpenDataLogger\bin\openDatalogger\Release;$(LibraryPath)</LibraryPath>
-    <OutDir>..\..\bin\$(ProjectName)\$(Configuration)\</OutDir>
+    <LibraryPath>..\..\bin\openDataLogger\$(Configuration)\$(Platform)\;;$(LibraryPath)</LibraryPath>
+    <OutDir>..\..\bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LibraryPath>C:\Users\thorsten\Documents\GitHub\OpenDataLogger\bin\openDatalogger\Release;$(LibraryPath)</LibraryPath>
-    <OutDir>..\..\bin\$(ProjectName)\$(Configuration)\($Platform)\</OutDir>
+    <LibraryPath>..\..\bin\openDataLogger\$(Configuration)\$(Platform)\;$(LibraryPath);$(LibraryPath)</LibraryPath>
+    <OutDir>..\..\bin\$(ProjectName)\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -111,33 +115,42 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>C:\Users\thorsten\Documents\GitHub\OpenDataLogger\src\logger;C:\Users\thorsten\Documents\GitHub\OpenDataLogger\src\sims\rF2;</AdditionalIncludeDirectories>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <CompileAsManaged>false</CompileAsManaged>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>openDataLogger.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>C:\Users\thorsten\Documents\GitHub\OpenDataLogger\src\logger;C:\Users\thorsten\Documents\GitHub\OpenDataLogger\src\sims\rF2;</AdditionalIncludeDirectories>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <CompileAsManaged>false</CompileAsManaged>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>openDataLogger.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
