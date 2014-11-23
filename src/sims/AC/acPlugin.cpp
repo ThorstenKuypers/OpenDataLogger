@@ -14,9 +14,15 @@ AC_Plugin* _gInst;
 
 
 /*** C-interface -> export ***/
-void acPlugin()
+void* acPlugin_init()
 {
-	_gInst = new AC_Plugin();
+	try {
+		_gInst = new AC_Plugin();
+	}
+	catch (std::exception ex)
+	{
+		return nullptr;
+	}
 }
 
 void acPlugin_clean()
@@ -35,9 +41,9 @@ AC_Plugin::AC_Plugin()
 	float _lastUpdate =0.0f; 
 
 
-	_odl = new COpenDataLogger();
+	_odl = new COpenDataLogger(std::string("AsettoCorsa"));
 	if (!_odl)
-		throw 0xFF;
+		throw std::exception("error instaciating OpenDataLogger class", -1);
 }
 
 AC_Plugin::~AC_Plugin()

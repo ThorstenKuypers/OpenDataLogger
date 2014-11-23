@@ -5,7 +5,15 @@
 #include <Windows.h>
 
 #include <OpenDataLogger.h>
+#include <BasePlugin.h>
 #include "SharedFileOut.h"
+
+/****************************************************************************************
+ * 
+ * The plugin system of AC is quite different that thes one used by rFactor. Instead of
+ * loading the DLL directly as in rFactor AC uses python scripts to define plugin apps.
+ * So this DLL is loaded by the python app odl.py from within AC.
+****************************************************************************************/
 
 #define AC_PLUGIN_EXPORT __declspec(dllexport)
 
@@ -14,7 +22,7 @@ using namespace OpenDataLogger;
 
 namespace ACPlugin {
 
-	class AC_Plugin {
+	class AC_Plugin : public CBasePlugin {
 
 	private:
 
@@ -52,7 +60,8 @@ namespace ACPlugin {
 
 }
 
+
+/* these defines the export API interface which is used as entry point for pathon
+ * ctypes to load this DLL from inside AC app */
 extern "C" AC_PLUGIN_EXPORT void acPlugin();
 extern "C" AC_PLUGIN_EXPORT void acPlugin_clean();
-
-//extern "C" void acPlu

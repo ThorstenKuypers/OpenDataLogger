@@ -41,7 +41,7 @@ Global
 		{4EE57F3F-2003-4DD3-AEFA-9C26D24B5484}.Debug|x64.ActiveCfg = Debug|x64
 		{4EE57F3F-2003-4DD3-AEFA-9C26D24B5484}.Debug|x64.Build.0 = Debug|x64
 		{4EE57F3F-2003-4DD3-AEFA-9C26D24B5484}.Release|Any CPU.ActiveCfg = Release|Win32
-		{4EE57F3F-2003-4DD3-AEFA-9C26D24B5484}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{4EE57F3F-2003-4DD3-AEFA-9C26D24B5484}.Release|Mixed Platforms.ActiveCfg = Release|x64
 		{4EE57F3F-2003-4DD3-AEFA-9C26D24B5484}.Release|Win32.ActiveCfg = Release|Win32
 		{4EE57F3F-2003-4DD3-AEFA-9C26D24B5484}.Release|Win32.Build.0 = Release|Win32
 		{4EE57F3F-2003-4DD3-AEFA-9C26D24B5484}.Release|x64.ActiveCfg = Release|x64
