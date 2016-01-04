@@ -59,12 +59,20 @@ public:
 	virtual bool WantsWeatherAccess()                                   { return(true); } // change to true in order to read or write weather with AccessWeather() call:
 	virtual bool AccessWeather(double trackNodeSize, WeatherControlInfoV01 &info); // current weather is passed in; return true if you want to change it
 
+	virtual void SetPhysicsOptions(PhysicsOptionsV01 &options);
+	virtual bool ForceFeedback(double &forceValue);
+
 private:
 
 	virtual void YamlUpdate(void*);
 
 	ScoringInfoV01 _scoringInfo;	// latest scoring info (partial info; without vehicle array update)
 	VehicleScoringInfoV01 _playerVehicleInfo; // VehicleScoringInfo of player
+
+	unsigned char TC = -1; // traction control setting
+	unsigned char ABS = -1; // ABS setting
+	double ffb = 0.0f; // force feedback value
+
 };
 
 #endif // _RF2_PLUGIN_H_

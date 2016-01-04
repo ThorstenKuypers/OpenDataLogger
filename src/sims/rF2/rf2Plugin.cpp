@@ -67,7 +67,7 @@ void rf2Plugin::StartSession()
 	_newSession = true;
 	_playerVehicleIdx = -1;
 	_startFuel = -1;
-
+	
 	srand((UINT)time(NULL));
 	_sessionID = (DWORD)rand();
 
@@ -118,6 +118,20 @@ void rf2Plugin::Load()
 void rf2Plugin::Unload()
 {
 
+}
+
+void rf2Plugin::SetPhysicsOptions(PhysicsOptionsV01 &options)
+{
+	TC = options.mTractionControl;
+	ABS = options.mAntiLockBrakes;
+
+}
+
+bool rf2Plugin::ForceFeedback(double &forceValue)
+{
+	ffb = forceValue;
+
+	return false;
 }
 
 void rf2Plugin::UpdateScoring(const ScoringInfoV01& info)
@@ -218,8 +232,8 @@ void rf2Plugin::UpdateTelemetry(const TelemInfoV01& info)
 		}
 		cd.altPos = (float)info.mPos.y;
 		cd.brake = (float)info.mUnfilteredBrake;
-		cd.brakeBias = -1;
-		cd.cfsRideHeight = -1;
+		cd.brakeBias = (float)info.mRearBrakeBias;
+		cd.cfsRideHeight = (float)info.mFrontWingHeight;
 		cd.clutch = (float)info.mUnfilteredClutch;
 		cd.engineWarnings = 0;
 		cd.fuelLevel = (float)info.mFuel;
@@ -247,7 +261,9 @@ void rf2Plugin::UpdateTelemetry(const TelemInfoV01& info)
 		cd.rpm = (float)info.mEngineRPM;
 		cd.speed = (float)(sqrt((float)(pow(info.mLocalVel.x, 2.0f) + pow(info.mLocalVel.y, 2.0f) + pow(info.mLocalVel.z, 2.0f))));
 
-		cd.steeringWheelAngle = -1;
+		cd.steeringWheelAngle = info.mUnfilteredSteering;
+		cd.mSteeringShaftTorque = info.mSteeringShaftTorque;
+
 		cd.throttle = (float)info.mUnfilteredThrottle;
 		cd.tractionControl = -1;
 		cd.velocity[0] = (float)(info.mLocalVel.z * -1);
@@ -264,9 +280,10 @@ void rf2Plugin::UpdateTelemetry(const TelemInfoV01& info)
 		cd.wheels[0].pressure = (float)info.mWheel[0].mPressure;
 		cd.wheels[0].rideHeight = (float)info.mWheel[0].mRideHeight;
 		cd.wheels[0].speed = (float)info.mWheel[0].mRotation;
-		cd.wheels[0].tempL = (float)info.mWheel[0].mTemperature[0];
-		cd.wheels[0].tempM = (float)info.mWheel[0].mTemperature[1];
-		cd.wheels[0].tempR = (float)info.mWheel[0].mTemperature[2];
+		// temperature is in °Kelvin so subtract 271 from the value to get °C
+		cd.wheels[0].tempL = (float)(info.mWheel[0].mTemperature[0] - 273.15);
+		cd.wheels[0].tempM = (float)(info.mWheel[0].mTemperature[1] - 273.15);
+		cd.wheels[0].tempR = (float)(info.mWheel[0].mTemperature[2] - 273.15);
 		cd.wheels[0].wearL = (float)info.mWheel[0].mWear;
 		cd.wheels[0].wearM = (float)info.mWheel[0].mWear;
 		cd.wheels[0].wearR = (float)info.mWheel[0].mWear;
@@ -275,9 +292,9 @@ void rf2Plugin::UpdateTelemetry(const TelemInfoV01& info)
 		cd.wheels[1].pressure = (float)info.mWheel[1].mPressure;
 		cd.wheels[1].rideHeight = (float)info.mWheel[1].mRideHeight;
 		cd.wheels[1].speed = (float)info.mWheel[1].mRotation;
-		cd.wheels[1].tempL = (float)info.mWheel[1].mTemperature[0];
-		cd.wheels[1].tempM = (float)info.mWheel[1].mTemperature[1];
-		cd.wheels[1].tempR = (float)info.mWheel[1].mTemperature[2];
+		cd.wheels[1].tempL = (float)(info.mWheel[1].mTemperature[0] - 273.15);
+		cd.wheels[1].tempM = (float)(info.mWheel[1].mTemperature[1] - 273.15);
+		cd.wheels[1].tempR = (float)(info.mWheel[1].mTemperature[2] - 273.15);
 		cd.wheels[1].wearL = (float)info.mWheel[1].mWear;
 		cd.wheels[1].wearM = (float)info.mWheel[1].mWear;
 		cd.wheels[1].wearR = (float)info.mWheel[1].mWear;
@@ -286,9 +303,9 @@ void rf2Plugin::UpdateTelemetry(const TelemInfoV01& info)
 		cd.wheels[2].pressure = (float)info.mWheel[2].mPressure;
 		cd.wheels[2].rideHeight = (float)info.mWheel[2].mRideHeight;
 		cd.wheels[2].speed = (float)info.mWheel[2].mRotation;
-		cd.wheels[2].tempL = (float)info.mWheel[2].mTemperature[0];
-		cd.wheels[2].tempM = (float)info.mWheel[2].mTemperature[1];
-		cd.wheels[2].tempR = (float)info.mWheel[2].mTemperature[2];
+		cd.wheels[2].tempL = (float)(info.mWheel[2].mTemperature[0] - 273.15);
+		cd.wheels[2].tempM = (float)(info.mWheel[2].mTemperature[1] - 273.15);
+		cd.wheels[2].tempR = (float)(info.mWheel[2].mTemperature[2] - 273.15);
 		cd.wheels[2].wearL = (float)info.mWheel[2].mWear;
 		cd.wheels[2].wearM = (float)info.mWheel[2].mWear;
 		cd.wheels[2].wearR = (float)info.mWheel[2].mWear;
@@ -297,12 +314,16 @@ void rf2Plugin::UpdateTelemetry(const TelemInfoV01& info)
 		cd.wheels[3].pressure = (float)info.mWheel[3].mPressure;
 		cd.wheels[3].rideHeight = (float)info.mWheel[3].mRideHeight;
 		cd.wheels[3].speed = (float)info.mWheel[3].mRotation;
-		cd.wheels[3].tempL = (float)info.mWheel[3].mTemperature[0];
-		cd.wheels[3].tempM = (float)info.mWheel[3].mTemperature[1];
-		cd.wheels[3].tempR = (float)info.mWheel[3].mTemperature[2];
+		cd.wheels[3].tempL = (float)(info.mWheel[3].mTemperature[0] - 273.15);
+		cd.wheels[3].tempM = (float)(info.mWheel[3].mTemperature[1] - 273.15);
+		cd.wheels[3].tempR = (float)(info.mWheel[3].mTemperature[2] - 273.15);
 		cd.wheels[3].wearL = (float)info.mWheel[3].mWear;
 		cd.wheels[3].wearM = (float)info.mWheel[3].mWear;
 		cd.wheels[3].wearR = (float)info.mWheel[3].mWear;
+
+		cd.dcABS = ABS;
+		cd.dcTC = TC;
+		cd.wheelForce = ffb;
 
 		if (_maxEngineRpm == -1)
 			_maxEngineRpm = (float)info.mEngineMaxRPM;

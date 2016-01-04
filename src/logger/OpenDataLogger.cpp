@@ -34,6 +34,15 @@ COpenDataLogger::COpenDataLogger(string& simName) : COpenDataLogger()
 	irsdkVar("SessionLapsRemain", &_sessionData.sessionLapsLeft, irsdk_int, 1, "Laps left till session ends", "", IRSDK_LOG_ALL);
 
 	irsdkVar("SteeringWheelAngle", &_carData.steeringWheelAngle, irsdk_float, 1, "Steering wheel angle", "rad", IRSDK_LOG_ALL);
+
+	// forces at wheel
+	irsdkVar("SteeringShaftTorque", &_carData.mSteeringShaftTorque, irsdk_double, 1, "Steering wheel torque", "NM", IRSDK_LOG_ALL);
+	irsdkVar("ForceFeedback", &_carData.wheelForce, irsdk_double, 1, "Force Feedback Value", "", IRSDK_LOG_ALL);
+
+	irsdkVar("dcABS", &_carData.dcABS, irsdk_char, 1, "ABS setting", "", IRSDK_LOG_ALL);
+	irsdkVar("dcTractionControl", &_carData.dcTC, irsdk_char, 1, "Traction Control setting", "", IRSDK_LOG_ALL);
+	irsdkVar("dcBrakeBias", &_carData.brakeBias, irsdk_float, 1, "brake bias setting (% of rear)", "%", IRSDK_LOG_ALL);
+
 	irsdkVar("Throttle", &_carData.throttle, irsdk_float, 1, "0=off throttle to 1=full throttle", "%", IRSDK_LOG_ALL);
 	irsdkVar("Brake", &_carData.brake, irsdk_float, 1, "0=brake released to 1=max pedal force", "%", IRSDK_LOG_ALL);
 	irsdkVar("Clutch", &_carData.clutch, irsdk_float, 1, "0=disengaged to 1=fully engaged", "%", IRSDK_LOG_ALL);

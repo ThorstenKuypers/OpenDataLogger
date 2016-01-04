@@ -86,6 +86,7 @@ namespace OpenDataLogger {
 	{
 		bool isOnPitRoad;
 		float steeringWheelAngle;
+		double mSteeringShaftTorque;
 		float throttle;
 		float brake;
 		float clutch;
@@ -123,6 +124,11 @@ namespace OpenDataLogger {
 		float voltage;
 		float manifoldPress;
 		float cfsRideHeight;
+
+
+		unsigned char dcTC;  // 0 (off) - 3 (high)
+		unsigned char dcABS;   // 0 (off) - 2 (high)
+		double wheelForce; // force feedback value to be played back by wheel
 
 		WheelData wheels[4];
 	};
@@ -203,6 +209,12 @@ namespace OpenDataLogger {
 		sectorInfo* sectors;	// sectors info array
 	};
 
+	struct PhysicsData
+	{
+		unsigned char dcTC;  // 0 (off) - 3 (high)
+		unsigned char dcABS;   // 0 (off) - 2 (high)
+		double wheelForce; // force feedback value to be played back by wheel
+	};
 
 	class COpenDataLogger
 	{
